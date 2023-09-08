@@ -48,3 +48,9 @@ class User(AbstractUser):
     REQUIRED_FIELDS = []
 
     objects = UserManager()
+
+    class Meta:
+        ordering = ["id"]
+
+    def __str__(self):
+        return self.first_name + " " + self.last_name
