@@ -1,7 +1,16 @@
-from rest_framework import viewsets, mixins
+from django.utils import timezone
+from rest_framework import viewsets, mixins, status
+from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 
 from borrowing.models import Borrowing
-from borrowing.serializers import BorrowingSerializer, BorrowingListSerializer
+from borrowing.serializers import (
+    BorrowingSerializer,
+    BorrowingListSerializer,
+    BorrowingDetailSerializer
+)
 
 
 class BorrowingViewSet(
@@ -16,6 +25,9 @@ class BorrowingViewSet(
     def get_serializer_class(self):
         if self.action == "list":
             return BorrowingListSerializer
+
+        if self.action == "retrieve":
+            return BorrowingDetailSerializer
 
         return BorrowingSerializer
 
@@ -44,6 +56,27 @@ class BorrowingViewSet(
                 queryset = queryset.filter(actual_return_date__isnull=False)
 
         return queryset
+
+    @action(
+        methods=["PUT"],
+        detail=True,
+        url_path="return",
+        permission_classes=(IsAuthenticated,)
+    )
+    def book_return(self, request, pk=None):
+        """Endpoint for users to return book"""
+        borrowing = self.get_object()
+        book = borrowing.book
+        if borrowing.actual_return_date is None:
+            borrowing.actual_return_date = timezone.now().date()
+            borrowing.save()
+            book.inventory += 1
+            book.save()
+        else:
+            raise ValidationError(
+                "This book has been returned"
+            )
+        return Response(status=status.HTTP_200_OK)
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
