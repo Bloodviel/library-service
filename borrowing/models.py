@@ -20,6 +20,13 @@ class Borrowing(models.Model):
     )
 
     @property
+    def total_price(self):
+        return (
+            self.book.daily_free
+            * (self.expected_return_date - self.borrow_date)
+        )
+
+    @property
     def is_active(self):
         return self.actual_return_date is None
 
