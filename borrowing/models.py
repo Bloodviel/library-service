@@ -23,7 +23,7 @@ class Borrowing(models.Model):
     def total_price(self):
         return (
             self.book.daily_free
-            * (self.expected_return_date - self.borrow_date)
+            * (self.expected_return_date - self.borrow_date).days
         )
 
     @property
