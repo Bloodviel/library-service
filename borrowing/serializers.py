@@ -3,6 +3,7 @@ from rest_framework.exceptions import ValidationError
 
 from book.models import Book
 from borrowing.models import Borrowing, Payment
+from borrowing.notification_service import send_message
 
 
 class BorrowingSerializer(serializers.ModelSerializer):
@@ -12,6 +13,12 @@ class BorrowingSerializer(serializers.ModelSerializer):
         book.inventory -= 1
         if book.inventory >= 0:
             book.save()
+            message = (
+                f"New Borrowing:\n"
+                f"{book}\n"
+                f"Expected return date: {data['expected_return_date']}"
+            )
+            send_message(message)
             return data
         else:
             raise ValidationError("Book not available")

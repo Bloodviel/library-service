@@ -6,6 +6,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from borrowing.models import Borrowing, Payment
+from borrowing.notification_service import send_message
 from borrowing.serializers import (
     BorrowingSerializer,
     BorrowingListSerializer,
@@ -72,6 +73,15 @@ class BorrowingViewSet(
         if borrowing.actual_return_date is None:
             borrowing.actual_return_date = timezone.now().date()
             borrowing.save()
+            message = (
+                f"Borrowing:\n"
+                f"{book}\n"
+                f"Expected return date: {borrowing.expected_return_date}\n"
+                f"Actual return data: {borrowing.actual_return_date}\n"
+                f"Successful.\n"
+                f"Have a nice day!"
+            )
+            send_message(message)
             book.inventory += 1
             book.save()
         else:
