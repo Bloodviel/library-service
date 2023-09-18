@@ -2,7 +2,7 @@ from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
 from book.models import Book
-from borrowing.models import Borrowing
+from borrowing.models import Borrowing, Payment
 
 
 class BorrowingSerializer(serializers.ModelSerializer):
@@ -61,4 +61,18 @@ class BorrowingDetailSerializer(serializers.ModelSerializer):
             "user",
             "user_full_name",
             "is_active"
+        ]
+
+
+class PaymentSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Payment
+        fields = [
+            "status",
+            "type",
+            "borrowing",
+            "session_url",
+            "session_id",
+            "money_to_pay"
         ]
