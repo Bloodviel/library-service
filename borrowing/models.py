@@ -25,3 +25,39 @@ class Borrowing(models.Model):
 
     def __str__(self):
         return f"{self.user} - {self.book.title}"
+
+
+class Payment(models.Model):
+    PAYMENT_STATUS_CHOICES = [
+        ("PENDING", "Pending"),
+        ("PAID", "Paid")
+    ]
+    PAYMENT_TYPE_CHOICES = [
+        ("PAYMENT", "Payment"),
+        ("FINE", "Fine")
+    ]
+
+    status = models.CharField(max_length=7, choices=PAYMENT_STATUS_CHOICES)
+    type = models.CharField(max_length=7, choices=PAYMENT_TYPE_CHOICES)
+    borrowing = models.ForeignKey(
+        Borrowing,
+        on_delete=models.CASCADE,
+        related_name="payments"
+    )
+    session_url = models.URLField(
+        max_length=255,
+        blank=True,
+        null=True
+    )
+    session_id = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True
+    )
+    money_to_pay = models.DecimalField(
+        max_digits=6,
+        decimal_places=2
+    )
+
+    def __str__(self):
+        return self.id
