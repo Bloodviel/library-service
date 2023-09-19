@@ -1,7 +1,7 @@
-from django.utils import timezone
+import stripe
+from django.shortcuts import get_object_or_404
 from rest_framework import viewsets, mixins, status
 from rest_framework.decorators import action
-from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
@@ -11,7 +11,8 @@ from borrowing.serializers import (
     BorrowingSerializer,
     BorrowingListSerializer,
     BorrowingDetailSerializer,
-    PaymentSerializer
+    BorrowingReturnSerializer,
+    PaymentSerializer,
 )
 
 
@@ -31,6 +32,9 @@ class BorrowingViewSet(
 
         if self.action == "retrieve":
             return BorrowingDetailSerializer
+
+        if self.action == "book_return":
+            return BorrowingReturnSerializer
 
         return BorrowingSerializer
 
@@ -69,26 +73,14 @@ class BorrowingViewSet(
     def book_return(self, request, pk=None):
         """Endpoint for users to return book"""
         borrowing = self.get_object()
-        book = borrowing.book
-        if borrowing.actual_return_date is None:
-            borrowing.actual_return_date = timezone.now().date()
-            borrowing.save()
-            message = (
-                f"Borrowing:\n"
-                f"{book}\n"
-                f"Expected return date: {borrowing.expected_return_date}\n"
-                f"Actual return data: {borrowing.actual_return_date}\n"
-                f"Successful.\n"
-                f"Have a nice day!"
-            )
-            send_message(message)
-            book.inventory += 1
-            book.save()
-        else:
-            raise ValidationError(
-                "This book has been returned"
-            )
-        return Response(status=status.HTTP_200_OK)
+        serializer = self.get_serializer(borrowing, request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response(
+            {"success": "Your book was successfully returned"},
+            status=status.HTTP_200_OK,
+        )
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
@@ -106,3 +98,46 @@ class PaymentViewSet(viewsets.ReadOnlyModelViewSet):
             queryset = self.queryset.filter(borrowing__user=self.request.user)
 
         return queryset
+
+    @action(
+        detail=True,
+        methods=["GET"],
+        url_path="success"
+    )
+    def payment_success(self, request, pk=None):
+        """Endpoint to handle a successful payment"""
+        payment = get_object_or_404(Payment, pk=pk)
+
+        session = stripe.checkout.Session.retrieve(payment.session_id)
+        if session.payment_status == "paid":
+            payment.status = Payment.StatusChoices.PAID
+            payment.save()
+
+            message = (
+                f"Payment {payment.id}: was successful.\n"
+                f"Type: {payment.type}\n"
+                f"Borrowing: {payment.borrowing}"
+            )
+            send_message(message)
+
+            return Response(
+                {"success": "Payment was successful."},
+                status=status.HTTP_200_OK,
+            )
+        else:
+            return Response(
+                {"error": "Payment was not successful."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+    @action(
+        methods=["GET"],
+        detail=True,
+        url_path="cancel"
+    )
+    def payment_cancel(self, request, pk=None):
+        """Endpoint to handle a canceled payment"""
+        return Response(
+            "Cancel: payment canceled",
+            status=status.HTTP_200_OK
+        )
