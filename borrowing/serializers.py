@@ -70,10 +70,10 @@ class BorrowingSerializer(serializers.ModelSerializer):
         book.inventory -= 1
         book.save()
         message = (
-                f"New Borrowing:\n"
-                f"{book}\n"
-                f"Expected return date: {borrowing.expected_return_date}"
-            )
+            f"New Borrowing:\n"
+            f"{book}\n"
+            f"Expected return date: {borrowing.expected_return_date}"
+        )
         send_message(message)
         return borrowing
 
