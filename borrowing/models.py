@@ -35,17 +35,16 @@ class Borrowing(models.Model):
 
 
 class Payment(models.Model):
-    PAYMENT_STATUS_CHOICES = [
-        ("PENDING", "Pending"),
-        ("PAID", "Paid")
-    ]
-    PAYMENT_TYPE_CHOICES = [
-        ("PAYMENT", "Payment"),
-        ("FINE", "Fine")
-    ]
+    class StatusChoices(models.TextChoices):
+        PENDING = "Pending"
+        PAID = "Paid"
 
-    status = models.CharField(max_length=7, choices=PAYMENT_STATUS_CHOICES)
-    type = models.CharField(max_length=7, choices=PAYMENT_TYPE_CHOICES)
+    class TypeChoices(models.TextChoices):
+        PAYMENT = "Payment"
+        FINE = "Fine"
+
+    status = models.CharField(max_length=7, choices=StatusChoices.choices)
+    type = models.CharField(max_length=7, choices=TypeChoices.choices)
     borrowing = models.ForeignKey(
         Borrowing,
         on_delete=models.CASCADE,
