@@ -1,5 +1,6 @@
 import stripe
 from django.shortcuts import get_object_or_404
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import viewsets, mixins, status
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
@@ -81,6 +82,23 @@ class BorrowingViewSet(
             {"success": "Your book was successfully returned"},
             status=status.HTTP_200_OK,
         )
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="user_id",
+                type=int,
+                description="Filter by users id (ex. ?user_id=1,2)"
+            ),
+            OpenApiParameter(
+                name="is_active",
+                type=bool,
+                description="Filter by is active (ex. ?is_active=true)"
+            )
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
