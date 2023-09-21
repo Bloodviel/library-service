@@ -7,7 +7,6 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 from dotenv import load_dotenv
-from rest_framework.exceptions import ValidationError
 
 from rest_framework.test import APIClient
 
